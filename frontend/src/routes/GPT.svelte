@@ -70,17 +70,42 @@
         clearInterval(interval2);
     }
 
-    // **로 감싸진 텍스트를 추출하는 함수
     function extractBoldKeywords(text) {
-        const regex = /\*\*(.*?)\*\*/g;
+        const regex = /(?:-|\d+\.)\s*\*\*(.*?)\*\*/g;  // "-" 또는 "숫자."로 시작하고 "**"로 감싸진 항목을 추출
+        const regex2 = /\*\*(.*?)\*\*/g; // "**"로 감싸진 텍스트를 우선적으로 추출
+        const regex3 = /(?:-|\d+\.)\s*(.*?)(?:\r?\n|$)/g;  // "-" 또는 "숫자."로 시작하는 항목을 추출
+
         let matches;
         let keywords = [];
+
+        // "-" 또는 "숫자."로 시작하면서 "**"로 감싸진 키워드 추출
         while ((matches = regex.exec(text)) !== null) {
-            keywords.push(matches[1].trim());
+            const keyword = matches[1].trim();
+            if (keyword) {
+                keywords.push(keyword);
+            }
         }
+        
+        // "**"로 감싸진 키워드 추출 (위의 정규 표현식으로 누락된 경우를 대비)
+        while ((matches = regex2.exec(text)) !== null) {
+            const keyword = matches[1].trim();
+            if (keyword && !keywords.includes(keyword)) {
+                keywords.push(keyword);
+            }
+        }
+
+        // "-" 또는 "숫자."로 시작하는 항목을 추출하여 키워드로 활용
+        while ((matches = regex3.exec(text)) !== null) {
+            const keyword = matches[1].trim();
+            if (keyword && !keywords.includes(keyword)) {
+                keywords.push(keyword);
+            }
+        }
+
         console.log('Extracted Keywords:', keywords);  // 추출된 키워드 확인 로그
         return keywords;
     }
+
 
     async function handleSendPrompt() {
         if (prompt.trim() === '' || category.trim() === '') {
