@@ -5,7 +5,8 @@ from sqlalchemy.orm import sessionmaker
 SQLALCHEMY_DATABASE_URL = "sqlite:///./myapi.db"
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"timeout": 30}
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

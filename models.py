@@ -29,44 +29,65 @@ class User(Base):
     attempts = relationship("Attempt", back_populates="user")
 
 class Exam(Base):
-    __tablename__ = "exam"
+    __tablename__ = "exams"
 
-    id = Column(Integer, primary_key=True)
+    exam_id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    create_date = Column(DateTime, default=datetime.now())
+    create_date = Column(DateTime, default=datetime.now)
     user_id = Column(Integer, ForeignKey("user.id"))
+
     user = relationship("User", back_populates="exams")
     questions = relationship("TestQuestion", back_populates="exam")
 
-class TestQuestion(Base):
-    __tablename__ = "test_question"
 
-    id = Column(Integer, primary_key=True)
-    exam_id = Column(Integer, ForeignKey("exam.id"))
+class TestQuestion(Base):
+    __tablename__ = "test_questions"
+
+    question_id = Column(Integer, primary_key=True, index=True)
+    exam_id = Column(Integer, ForeignKey("exams.exam_id"))
     content = Column(Text, nullable=False)
 
     exam = relationship("Exam", back_populates="questions")
-    choices = relationship("Choice", back_populates="question")
+    choices = relationship("Choice", back_populates="question", foreign_keys="Choice.question_id")
+    correct_choice_id = Column(Integer, ForeignKey("choices.choice_id"))
+
+    correct_choice = relationship("Choice", foreign_keys=[correct_choice_id])
+
 
 class Choice(Base):
-    __tablename__ = "choice"
+    __tablename__ = "choices"
 
-    id = Column(Integer, primary_key=True)
-    question_id = Column(Integer, ForeignKey("test_question.id"))
+    choice_id = Column(Integer, primary_key=True, index=True)
+    question_id = Column(Integer, ForeignKey("test_questions.question_id"))
     content = Column(Text, nullable=False)
-    is_correct = Column(Boolean, nullable=False)
+    is_correct = Column(Boolean, default=False)
 
-    question = relationship("TestQuestion", back_populates="choices")
+    question = relationship("TestQuestion", back_populates="choices", foreign_keys=[question_id])
+
 
 class Attempt(Base):
-    __tablename__ = "attempt"
+    __tablename__ = "attempts"
 
-    id = Column(Integer, primary_key=True)
+    attempt_id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("user.id"))
-    exam_id = Column(Integer, ForeignKey("exam.id"))
+    exam_id = Column(Integer, ForeignKey("exams.exam_id"))
     score = Column(Integer, nullable=False)
-    attempt_date = Column(DateTime, default=datetime.now())
+    attempt_date = Column(DateTime, default=datetime.now)
 
     user = relationship("User", back_populates="attempts")
     exam = relationship("Exam")
+    answers = relationship("Answer", back_populates="attempt")
+
+
+class Answer(Base):
+    __tablename__ = "answers"
+
+    answer_id = Column(Integer, primary_key=True, index=True)
+    attempt_id = Column(Integer, ForeignKey("attempts.attempt_id"))
+    question_id = Column(Integer, ForeignKey("test_questions.question_id"))
+    selected_choice_id = Column(Integer, ForeignKey("choices.choice_id"))
+
+    attempt = relationship("Attempt", back_populates="answers")
+    question = relationship("TestQuestion")
+    selected_choice = relationship("Choice")
