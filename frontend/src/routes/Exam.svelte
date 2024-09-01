@@ -1,7 +1,7 @@
 <script>
     import Image_A from "/public/image5.png?enhanced";
     import Image_Human from "/public/image3.png?enhanced";
-    import { link } from "svelte-spa-router";
+    import { link, push } from "svelte-spa-router";
 
     let certifications = [
         "정보처리산업기사",
@@ -23,6 +23,15 @@
             selectedCertification = '';
         } else {
             selectedCertification = certification;
+        }
+    }
+
+    function handleExamDetail(selectedCertification) {
+        if (selectedCertification === '') {
+            alert('자격증을 선택해주세요!');
+        } else {
+        // URL에 쿼리 파라미터를 추가하여 이동
+            push(`/exam-detail?exam=${encodeURIComponent(selectedCertification)}`);
         }
     }
 </script>
@@ -94,11 +103,16 @@
     .certification-item {
         display: flex;
         align-items: center;
+        background-color: white;
+        height: 3rem;
         width: 342px;
+        border-radius: 7px;
+        font-size: 20px;
     }
 
     .certification-item input {
         margin-right: 10px;
+        margin-left: 1rem;
     }
 
     .button {
@@ -135,16 +149,14 @@
         margin-left: 20px;
     }
 
-    .speech-bubble::before {
-        content: '   ';
+    .speech-bubble::after {
+        content: '';
         position: absolute;
-        bottom: -20px;
-        left: 20px;
-        width: 0;
-        height: 0;
-        border-left: 20px solid transparent;
-        border-right: 20px solid transparent;
-        border-top: 20px solid white;
+        top: 50%;
+        left: -20px;
+        border-width: 10px;
+        border-style: solid;
+        border-color: transparent white transparent transparent;
     }
 </style>
 
@@ -182,8 +194,6 @@
                 {/each}
             </div>
         </div>
-        <a use:link href="/exam/detail">
-            <button class="button">문제풀기</button>
-        </a>
+        <button class="button" on:click={handleExamDetail(selectedCertification)}>문제풀기</button>
     </div>
 </div>
