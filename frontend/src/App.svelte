@@ -8,12 +8,13 @@
   import Home from './routes/Home.svelte';
   import Exam from './routes/Exam.svelte';
   import ExamDetail from './routes/Exam_detail.svelte';
+  import { wrap } from 'svelte-spa-router/wrap'; 
 
   const routes = {
     '/': Home,
     '/self': GPT,
     '/exam': Exam,
-    '/exam/detail': ExamDetail,
+    '/exam-detail': ExamDetail,
     '/user-create': UserCreate,
     '/user-login': UserLogin,
     '/question-modify/:question_id': QuestionModify,
