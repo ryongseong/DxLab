@@ -14,7 +14,7 @@
     '/': Home,
     '/self': GPT,
     '/exam': Exam,
-    '/exam-detail': ExamDetail,
+    '/exam-detail/:exam_id': ExamDetail,
     '/user-create': UserCreate,
     '/user-login': UserLogin,
     '/question-modify/:question_id': QuestionModify,
