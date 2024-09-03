@@ -19,3 +19,4 @@ export const questions = writable([]);
 export const gpt_response = writable('');
 export const is_loading = writable(false);
 export const is_loading2 = writable(false);
+export const certifications = writable([]);

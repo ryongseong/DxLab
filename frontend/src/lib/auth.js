@@ -1,4 +1,4 @@
-import { user, access_token, questions ,is_loading,gpt_response, is_loading2} from './store';
+import { user, access_token, questions, certifications, is_loading,gpt_response, is_loading2} from './store';
 import fastapi from './api.js';
 
 export async function login(username, password) {
@@ -25,6 +25,17 @@ export async function fetchMyQuestions() {
             reject(error);
         });
     });
+}
+
+export async function fetchCertifications() {
+    return new Promise((resolve, reject) => {
+        fastapi('get', '/api/exam', {}, (data) => {
+            certifications.set(data);
+            resolve(data);
+        }, (error) => {
+            reject(error);
+        })
+    })
 }
 
 export async function sendPrompt(question, category) {
