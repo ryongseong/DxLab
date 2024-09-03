@@ -3,35 +3,26 @@
     import Image_A from "/public/image5.png?enhanced";
     import { onMount } from "svelte";
 
-    let exam_id = "";
     let examData = { title: "", questions: [] };
     let isLoading = true;
     let showAnswers = false;
 
-    onMount(async () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        exam_id = urlParams.get('exam_id');
+    onMount(async ({params}) => {
+        const exam_id = params.exam_id;
+        try {
+            let url = `/api/exam/${exam_id}/questions`;
+            const response = await fastapi('get', url);
 
-        if (exam_id) {
-            try {
-                let url = `/api/exam/${exam_id}`;
-                const response = await fastapi('get', url);
-
-                if (response && response.title) {
-                    examData = response;
-                } else {
-                    console.error('No valid data received:', response);
-                    examData = { title: "시험 데이터를 불러올 수 없습니다.", questions: [] };
-                }
-            } catch (error) {
-                console.error('Error fetching exam data:', error);
+            if (response) {
+                examData = response;
+            } else {
+                console.error('No valid data received:', response);
                 examData = { title: "시험 데이터를 불러올 수 없습니다.", questions: [] };
-            } finally {
-                isLoading = false;
             }
-        } else {
-            console.error('Exam ID is missing in the URL.');
-            examData = { title: "시험을 찾을 수 없습니다.", questions: [] };
+        } catch (error) {
+            console.error('Error fetching exam data:', error);
+            examData = { title: "시험 데이터를 불러올 수 없습니다.", questions: [] };
+        } finally {
             isLoading = false;
         }
     });
@@ -90,7 +81,7 @@
                                 답: {question.choices.find(option => option.is_correct).content}
                             </p>
                         {/if}
-                        {#each question.choices as option}
+                        <!-- {#each question.choices as option}
                             <li
                                 class="option"
                                 style="color: {showAnswers && selectedAnswers.find(answer => answer.questionId === question.id)?.selectedChoiceId === option.id ? (option.is_correct ? 'blue' : 'red') : 'inherit'};"
@@ -106,7 +97,7 @@
                                     {option.content}
                                 </label>
                             </li>
-                        {/each}
+                        {/each} -->
                     </ul>
                 </div>
                 {/each}
@@ -196,14 +187,14 @@
         gap: 10px;
     }
 
-    .option {
+    /* .option {
         margin-bottom: 5px;
     }
     
     .option input {
         margin-right: 10px;
         transform: scale(1.5);
-    }
+    } */
 
     .answer {
         text-align: end;

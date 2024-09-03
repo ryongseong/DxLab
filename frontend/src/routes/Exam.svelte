@@ -2,27 +2,20 @@
     import Image_A from "/public/image5.png?enhanced";
     import Image_Human from "/public/image3.png?enhanced";
     import { link, push } from "svelte-spa-router";
+    import { onMount } from "svelte";
+    import fastapi from "../lib/api";
+    import { fetchCertifications } from "../lib/auth";
+    import { certifications } from "../lib/store";
 
-    let certifications = [
-        "정보처리산업기사",
-        "정보처리기사",
-        "정보기기운용기능사",
-        "워드프로세스",
-        "항공기사",
-        "전자기기기능사",
-        "전자산업기사",
-        "토목기능사",
-        "축산산업기사",
-        "소음진동기사"
-    ];
+    let isLoading = true;
 
-    let selectedCertification = '';
+    let selectedCertification = 0;
 
     function toggleSelection(certification) {
-        if (selectedCertification === certification) {
-            selectedCertification = '';
+        if (selectedCertification === certification.exam_id) {
+            selectedCertification = 0;
         } else {
-            selectedCertification = certification;
+            selectedCertification = certification.exam_id;
         }
     }
 
@@ -30,11 +23,64 @@
         if (selectedCertification === '') {
             alert('자격증을 선택해주세요!');
         } else {
-        // URL에 쿼리 파라미터를 추가하여 이동
-            push(`/exam-detail?exam=${encodeURIComponent(selectedCertification)}`);
+            push(`/exam-detail/${selectedCertification}`);
         }
     }
+
+    
+    onMount(async () => {
+        try {
+            await fetchCertifications();
+            console.log($certifications);
+        } catch (error) {
+            console.error('Error fetching exam data:', error);
+        } finally {
+            isLoading = false;
+        }
+    })
 </script>
+
+<div class="container">
+    {#if isLoading}
+        <p>Loading...</p>
+    {:else}
+        <div class="card-title">
+            <img class="head" src={Image_A} alt="A+사진" />
+            <p>
+                자격증 <strong>문제 풀기</strong>
+            </p>
+        </div>
+        <div class="card">
+            <div style="display: flex; align-items: center;">
+                <img class="body" src={Image_Human} alt="사람 사진" />
+                <div class="speech-bubble">
+                    원하는 자격증을 선택해 주세요!! <br />
+                    <span style="color: #8a56d8; font-weight: bold;">자격증시험 선택하기</span>
+                </div>
+            </div>
+            <div class="text-box">
+                <div class="certification-list">
+                    {#each $certifications as certification}
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <!-- svelte-ignore a11y-no-static-element-interactions -->
+                        <div
+                            class="certification-item"
+                            on:click={() => toggleSelection(certification)}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={selectedCertification === certification.exam_id}
+                                on:change={() => toggleSelection(certification)}
+                            />
+                            {certification.title}
+                        </div>
+                    {/each}
+                </div>
+            </div>
+            <button class="button" on:click={handleExamDetail(selectedCertification)}>문제풀기</button>
+        </div>
+    {/if}
+</div>
 
 <style>
     .container {
@@ -159,41 +205,3 @@
         border-color: transparent white transparent transparent;
     }
 </style>
-
-<div class="container">
-    <div class="card-title">
-        <img class="head" src={Image_A} alt="A+사진" />
-        <p>
-            자격증 <strong>문제 풀기</strong>
-        </p>
-    </div>
-    <div class="card">
-        <div style="display: flex; align-items: center;">
-            <img class="body" src={Image_Human} alt="사람 사진" />
-            <div class="speech-bubble">
-                원하는 자격증을 선택해 주세요!! <br />
-                <span style="color: #8a56d8; font-weight: bold;">자격증시험 선택하기</span>
-            </div>
-        </div>
-        <div class="text-box">
-            <div class="certification-list">
-                {#each certifications as certification}
-                    <!-- svelte-ignore a11y-click-events-have-key-events -->
-                    <!-- svelte-ignore a11y-no-static-element-interactions -->
-                    <div 
-                        class="certification-item"
-                        on:click={() => toggleSelection(certification)}
-                    >
-                        <input
-                            type="checkbox"
-                            checked={selectedCertification === certification}
-                            on:change={() => toggleSelection(certification)}
-                        />
-                        {certification}
-                    </div>
-                {/each}
-            </div>
-        </div>
-        <button class="button" on:click={handleExamDetail(selectedCertification)}>문제풀기</button>
-    </div>
-</div>
