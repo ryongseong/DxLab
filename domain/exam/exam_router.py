@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
-from domain.exam.exam_crud import create_exam, get_exam, submit_attempt
+from domain.exam.exam_crud import create_exam, get_exam, get_exam_choices, get_exam_question_id, submit_attempt, get_exam_questions
 from domain.exam.exam_schema import ExamCreate, Exam, AttemptCreate, Attempt
 from domain.user import user_schema
 from domain.user.user_router import get_current_user
@@ -31,6 +31,17 @@ def read_exam(exam_id: int, db: Session = Depends(get_db)):
     if db_exam is None:
         raise HTTPException(status_code=404, detail="Exam not found")
     return db_exam
+
+@router.get('/{exam_id}/questions')
+def read_exam_questions(exam_id: int, db: Session = Depends(get_db)):
+    db_exam_questions = get_exam_questions(db, exam_id)
+    if db_exam_questions is None:
+        raise HTTPException(status_code=404, detail="Questions not found")
+    
+    for question in db_exam_questions:
+        question.choices = get_exam_choices(db, get_exam_question_id(db, question))
+
+    return db_exam_questions
 
 @router.post("/{exam_id}/attempt", response_model=Attempt)
 def attempt_exam(

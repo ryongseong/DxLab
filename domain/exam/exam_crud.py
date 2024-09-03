@@ -36,11 +36,20 @@ def create_exam(db: Session, exam_data: ExamCreate, user_id: int) -> Exam:
 
     return db_exam
 
-def get_exam(db: Session, exam_id: int) -> Exam:
-    exam = db.query(Exam).filter(Exam.exam_id == exam_id).first()
+def get_exam(db: Session, exam_id: int):
+    exam = db.query(Exam).filter(Exam.exam_id == exam_id).all()
     if not exam:
         return None
     return exam
+
+def get_exam_questions(db: Session, exam_id: int):
+    return db.query(TestQuestion).filter(TestQuestion.exam_id == exam_id).all()
+
+def get_exam_question_id(db: Session, question: TestQuestion):
+    return db.query(TestQuestion).filter(TestQuestion.content == question.content).first().question_id
+
+def get_exam_choices(db: Session, question_id: int):
+    return db.query(Choice).filter(Choice.question_id == question_id).all()
 
 def submit_attempt(db: Session, attempt_data: AttemptCreate, user_id: int) -> Attempt:
     db_attempt = Attempt(
