@@ -15,6 +15,17 @@ class Question(Base):
     user = relationship("User", back_populates="questions")
     modify_date = Column(DateTime, nullable=True)
 
+class Gemini(Base):
+    __tablename__ = "gemini"
+
+    id = Column(Integer, primary_key=True)
+    category = Column(String, nullable=True)
+    subject = Column(Text, nullable=False)
+    content = Column(Text, nullable=False)
+    create_date = Column(DateTime, nullable=False, default=datetime.now())
+    user_id = Column(Integer, ForeignKey("user.id"))
+    user = relationship("User", back_populates="gemini")
+
 class User(Base):
     __tablename__ = "user"
 
@@ -25,6 +36,7 @@ class User(Base):
     thread_id = Column(String, nullable=True)
 
     questions = relationship("Question", back_populates="user")
+    gemini = relationship("Gemini", back_populates="user")
     exams = relationship("Exam", back_populates="user")
     attempts = relationship("Attempt", back_populates="user")
 
