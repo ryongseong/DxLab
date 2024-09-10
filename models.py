@@ -45,60 +45,70 @@ class Exam(Base):
 
     exam_id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
-    description = Column(Text, nullable=True)
     create_date = Column(DateTime, default=datetime.now)
     user_id = Column(Integer, ForeignKey("user.id"))
 
     user = relationship("User", back_populates="exams")
     questions = relationship("TestQuestion", back_populates="exam")
+    results = relationship("Attempt", back_populates="exam")
 
 
 class TestQuestion(Base):
     __tablename__ = "test_questions"
 
     question_id = Column(Integer, primary_key=True, index=True)
-    exam_id = Column(Integer, ForeignKey("exams.exam_id"))
+    exam_id = Column(Integer, ForeignKey("exams.exam_id", ondelete="CASCADE"))
     content = Column(Text, nullable=False)
+    correct_choice_id = Column(Integer, ForeignKey("choices.choice_id", ondelete="SET NULL"),  nullable=True)
+    description = Column(Text, nullable=False)
 
     exam = relationship("Exam", back_populates="questions")
-    choices = relationship("Choice", back_populates="question", foreign_keys="Choice.question_id")
-    correct_choice_id = Column(Integer, ForeignKey("choices.choice_id"))
-
-    correct_choice = relationship("Choice", foreign_keys=[correct_choice_id])
-
-
+    correct_choice = relationship(
+        "Choice",
+        foreign_keys=[correct_choice_id],
+        back_populates="question",  # 여기를 'question'으로 수정
+        uselist=False  # 이 관계가 하나의 객체만 반환하도록 설정
+    )
+    choices = relationship(
+        "Choice",
+        foreign_keys="[Choice.question_id]",
+        back_populates="question"  # 'question'이라는 역방향 관계가 Choice 모델에 정의되어 있어야 합니다.
+    )
 class Choice(Base):
     __tablename__ = "choices"
 
     choice_id = Column(Integer, primary_key=True, index=True)
-    question_id = Column(Integer, ForeignKey("test_questions.question_id"))
+    question_id = Column(Integer, ForeignKey("test_questions.question_id"), onupdate="CASCADE")
     content = Column(Text, nullable=False)
     is_correct = Column(Boolean, default=False)
 
-    question = relationship("TestQuestion", back_populates="choices", foreign_keys=[question_id])
+    question = relationship(
+        "TestQuestion",
+        back_populates="choices",  # 'choices'가 TestQuestion 모델에 정의된 관계 이름입니다.
+        foreign_keys=[question_id]
+    )
 
 
 class Attempt(Base):
     __tablename__ = "attempts"
 
     attempt_id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("user.id"))
-    exam_id = Column(Integer, ForeignKey("exams.exam_id"))
+    user_id = Column(Integer, ForeignKey("user.id", ondelete="CASCADE"))
+    exam_id = Column(Integer, ForeignKey("exams.exam_id", ondelete="CASCADE"))
     score = Column(Integer, nullable=False)
     attempt_date = Column(DateTime, default=datetime.now)
 
     user = relationship("User", back_populates="attempts")
-    exam = relationship("Exam")
+    exam = relationship("Exam", back_populates="results")
     answers = relationship("Answer", back_populates="attempt")
-
 
 class Answer(Base):
     __tablename__ = "answers"
 
     answer_id = Column(Integer, primary_key=True, index=True)
-    attempt_id = Column(Integer, ForeignKey("attempts.attempt_id"))
-    question_id = Column(Integer, ForeignKey("test_questions.question_id"))
-    selected_choice_id = Column(Integer, ForeignKey("choices.choice_id"))
+    attempt_id = Column(Integer, ForeignKey("attempts.attempt_id", ondelete="CASCADE"))
+    question_id = Column(Integer, ForeignKey("test_questions.question_id", ondelete="CASCADE"))
+    selected_choice_id = Column(Integer, ForeignKey("choices.choice_id", ondelete="SET NULL"), nullable=True)
 
     attempt = relationship("Attempt", back_populates="answers")
     question = relationship("TestQuestion")

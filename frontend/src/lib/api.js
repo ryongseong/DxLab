@@ -43,29 +43,45 @@ const fastapi = (operation, url, params, success_callback, failure_callback) => 
                 }
                 return;
             }
-            response.json()
-                .then(json => {
-                    if (response.status >= 200 && response.status < 300) {
-                        if (success_callback) {
-                            success_callback(json);
-                        }
-                    } else if (operation !== 'login' && response.status === 401) {
-                        access_token.set('');
-                        username.set('');
-                        is_login.set(false);
-                        alert('로그인이 필요합니다.');
-                        push('/user-login');
+
+            // JSON 파싱 시 에러 처리를 추가하여 JSON 형식이 아닌 경우 대응
+            return response.json().then(json => {
+                if (response.status >= 200 && response.status < 300) {
+                    if (success_callback) {
+                        success_callback(json);
                     } else {
-                        if (failure_callback) {
-                            failure_callback(json);
-                        } else {
-                            alert(JSON.stringify(json));
-                        }
+                        console.log('Success response:', json);  // success_callback이 없는 경우 기본 처리
                     }
-                })
-                .catch(error => {
-                    alert(JSON.stringify(error));
-                });
+                } else if (operation !== 'login' && response.status === 401) {
+                    access_token.set('');
+                    username.set('');
+                    is_login.set(false);
+                    alert('로그인이 필요합니다.');
+                    push('/user-login');
+                } else {
+                    if (failure_callback) {
+                        failure_callback(json);
+                    } else {
+                        console.error('Failure response:', json);  // failure_callback이 없는 경우 기본 처리
+                        alert(JSON.stringify(json));
+                    }
+                }
+            }).catch(error => {
+                console.error('Error parsing JSON:', error);
+                if (failure_callback) {
+                    failure_callback({ message: 'JSON 파싱 오류' });
+                } else {
+                    alert('JSON 파싱 오류: ' + JSON.stringify(error));
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            if (failure_callback) {
+                failure_callback({ message: '네트워크 오류' });
+            } else {
+                alert('네트워크 오류: ' + JSON.stringify(error));
+            }
         });
 };
 

@@ -2,30 +2,51 @@
     import fastapi from "../lib/api";
     import Image_A from "/public/image5.png?enhanced";
     import { onMount } from "svelte";
-
+    
+    export let params; // props로 params를 가져옴
     let examData = { title: "", questions: [] };
     let isLoading = true;
     let showAnswers = false;
+    let selectedAnswers = [];
+    let exam_id;
 
-    onMount(async ({params}) => {
-        const exam_id = params.exam_id;
+    onMount(() => {
+        // params를 콘솔에 출력해서 제대로 전달되는지 확인
+        console.log("Params:", params);
+
+        // params.exam_id 값이 존재하는지 확인
+        if (params && params.exam_id) {
+            exam_id = params.exam_id;
+        } else {
+            console.error("exam_id가 존재하지 않습니다.");
+            return;
+        }
+        
+        fetchExamData()
+    });
+
+    function fetchExamData() {
         try {
-            let url = `/api/exam/${exam_id}/questions`;
-            const response = await fastapi('get', url);
-
-            if (response) {
-                examData = response;
-            } else {
-                console.error('No valid data received:', response);
-                examData = { title: "시험 데이터를 불러올 수 없습니다.", questions: [] };
-            }
+            const url = `/api/exam/${exam_id}/questions`;  // 쿼리 스트링을 빼고 URL을 설정
+            fastapi('get', url, null, 
+                (json) => {
+                    console.log("Success:", json[0]);
+                    json.forEach(element => {
+                        examData = element
+                    });
+                    // examData = json;  // 데이터가 있으면 examData에 할당
+                },
+                (error) => {
+                    console.error("Error fetching exam data:", error);
+                }
+            );
         } catch (error) {
             console.error('Error fetching exam data:', error);
             examData = { title: "시험 데이터를 불러올 수 없습니다.", questions: [] };
         } finally {
             isLoading = false;
         }
-    });
+    }
 
     function selectAnswer(questionId, optionId) {
         selectedAnswers = selectedAnswers.map(answer => 
@@ -40,8 +61,12 @@
     }
 
     async function submitExam() {
+        if (!exam_id) {
+            console.error("exam_id 파라미터가 없습니다.");
+            return;
+        }
         try {
-            const response = await fastapi('post', `/api/exam/${encodeURIComponent(examId)}/attempt`, {
+            const response = await fastapi('post', `/api/exam/${exam_id}/attempt`, {
                 exam_id: examId,
                 answers: selectedAnswers
             });
@@ -81,7 +106,7 @@
                                 답: {question.choices.find(option => option.is_correct).content}
                             </p>
                         {/if}
-                        <!-- {#each question.choices as option}
+                        {#each question.choices as option}
                             <li
                                 class="option"
                                 style="color: {showAnswers && selectedAnswers.find(answer => answer.questionId === question.id)?.selectedChoiceId === option.id ? (option.is_correct ? 'blue' : 'red') : 'inherit'};"
@@ -97,7 +122,7 @@
                                     {option.content}
                                 </label>
                             </li>
-                        {/each} -->
+                        {/each}
                     </ul>
                 </div>
                 {/each}

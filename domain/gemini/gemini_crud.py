@@ -30,7 +30,10 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 ASSISTANT_ID_Keyword = os.getenv("ASSISTANT_ID_Keyword")
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
+
+async def get_user_gemini(db: Session, user_id: int):
+    return db.query(Gemini).filter(Gemini.user_id == user_id).all()
 
 async def create_question(db: Session, question:str, category: str, user: User) -> Gemini:
     thread_id = user.thread_id
@@ -116,4 +119,44 @@ async def create_text(db: Session, question: str, keyword:list[str], user: User)
     return new_question
 
 async def make_gemini_text(question: str, keyword: list[str]) -> str:
-    pass
+    chain = await chainMaker()
+
+    new_question = question + str(keyword)
+    result = chain.invoke({'question': new_question})
+
+    Markdown(result.content)
+
+    return result.content
+
+async def chainMaker():
+    gemini = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.3)
+    
+    with open("../../data/information-allfinal.json", "r", encoding="utf-8") as file:
+        data = json.load(file)
+    
+    texts_to_split = [item for sublist in data for item in sublist]
+
+    model = SentenceTransformer('jhgan/ko-sbert-nli')
+
+    corpus_embeddings = model.encode(texts_to_split, convert_to_tensor=True)
+
+    retriver = BM25Retriever.from_texts(texts_to_split)
+
+    prompt_template = """
+        Given the following question and relevant context, provide a refined response:
+
+        Question: {question}
+
+        Context: {context}
+
+        Refined Response:
+    """
+
+    prompt = PromptTemplate(template=prompt_template, input_variables=["question", "context"])
+
+    chain = RunnableMap({
+        "context": lambda x: retriver.invoke(x['question']),
+        "question": lambda x: x['question']
+    }) | prompt | gemini
+
+    return chain

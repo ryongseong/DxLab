@@ -1,7 +1,6 @@
 <script>
-    import { questions } from '../lib/store';
     import { fetchMyQuestions, makeText, sendPrompt } from '../lib/auth.js';
-    import { gpt_response, is_loading, is_loading2 } from '../lib/store';
+    import { questions, gpt_response, is_loading, is_loading2 } from '../lib/store';
     import { onMount, onDestroy } from 'svelte';
     import { link, push } from 'svelte-spa-router';
     import fastapi from '../lib/api';
@@ -10,10 +9,16 @@
     let prompt = '';
 
     let categories = [
-        "지원동기",
-        "관심분야",
-        "교내외 활동 및 경력",
-        "성격의 장단점"
+        "지원 동기",
+        "입사 후 포부",
+        "성장 과정",
+        "성격의 장단점",
+        "직무 역량",
+        "사회 이슈",
+        "극복 경험",
+        "협업 경험",
+        "자유 양식",
+        "기타(취미 또는 특기)"
     ]
     let selected;
     let category = '';

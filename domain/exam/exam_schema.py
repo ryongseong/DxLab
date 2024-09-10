@@ -17,10 +17,13 @@ class Choice(BaseModel):
 class TestQuestionCreate(BaseModel):
     content: str
     choices: List[ChoiceCreate]
+    correct_choice_id: int
+    description: str
 
 class TestQuestion(BaseModel):
     id: int
     content: str
+    description: Optional[str]
     choices: List[Choice]
 
     class Config:

@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
 from domain.exam.exam_crud import create_exam, get_exam, get_exam_choices, get_exam_question_id, submit_attempt, get_exam_questions
-from domain.exam.exam_schema import ExamCreate, Exam, AttemptCreate, Attempt
+from domain.exam.exam_schema import ExamCreate, Exam, AttemptCreate, Attempt, TestQuestion
 from domain.user import user_schema
 from domain.user.user_router import get_current_user
 from models import Exam as EX
@@ -32,16 +32,30 @@ def read_exam(exam_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Exam not found")
     return db_exam
 
-@router.get('/{exam_id}/questions')
-def read_exam_questions(exam_id: int, db: Session = Depends(get_db)):
-    db_exam_questions = get_exam_questions(db, exam_id)
-    if db_exam_questions is None:
-        raise HTTPException(status_code=404, detail="Questions not found")
-    
-    for question in db_exam_questions:
-        question.choices = get_exam_choices(db, get_exam_question_id(db, question))
+# @router.get('/{exam_id}/questions')
+# def read_exam_questions(exam_id: int, db: Session = Depends(get_db)):
+#     db_exam_questions = get_exam(db, exam_id)
+#     if db_exam_questions is None:
+#         raise HTTPException(status_code=404, detail="Exam Questions Not Found")
+#     return db_exam_questions
 
-    return db_exam_questions
+# 시험에 대한 문제 목록을 반환하는 엔드포인트
+@router.get('/{exam_id}/questions', response_model=List[TestQuestion])
+def read_exam_questions(exam_id: int, db: Session = Depends(get_db)):
+    try:
+        db_exam_questions = get_exam_questions(db, exam_id)
+
+        if db_exam_questions is None or len(db_exam_questions) == 0:
+            raise HTTPException(status_code=404, detail="Questions not found")
+
+        # Pydantic 모델로 직렬화
+        return [TestQuestion.from_orm(q) for q in db_exam_questions]
+    
+    except Exception as e:
+        print(f"Error fetching exam questions: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+
 
 @router.post("/{exam_id}/attempt", response_model=Attempt)
 def attempt_exam(

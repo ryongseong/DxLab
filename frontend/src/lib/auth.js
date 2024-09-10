@@ -1,4 +1,4 @@
-import { user, access_token, questions, certifications, is_loading,gpt_response, is_loading2} from './store';
+import { user, access_token, questions, certifications, is_loading,gpt_response, is_loading2, gemini_response} from './store';
 import fastapi from './api.js';
 
 export async function login(username, password) {
@@ -19,6 +19,17 @@ export async function login(username, password) {
 export async function fetchMyQuestions() {
     return new Promise((resolve, reject) => {
         fastapi('get', '/api/question/user_list', {}, (data) => {
+            questions.set(data);
+            resolve(data);
+        }, (error) => {
+            reject(error);
+        });
+    });
+}
+
+export async function fetchMyQuestionsGemini() {
+    return new Promise((resolve, reject) => {
+        fastapi('get', '/api/gemini/user_list', {}, (data) => {
             questions.set(data);
             resolve(data);
         }, (error) => {
@@ -61,6 +72,37 @@ export async function makeText(question, keyword) {
         fastapi('post', '/api/question/text', { question, keyword }, (data) => {
             is_loading2.set(false);
             gpt_response.set(data.response);
+            resolve(data);
+        }, (error) => {
+            is_loading2.set(false);
+            reject(error);
+        })
+    })
+}
+
+export async function sendPromptGemini(question, category) {
+    console.log('Sending prompt:', question);
+    is_loading.set(true); // 로딩 시작
+    return new Promise((resolve, reject) => {
+        fastapi('post', '/api/gemini/gpt', { question, category }, (data) => {
+            console.log('Received response:', data);
+            gemini_response.set(data.response);
+            is_loading.set(false); // 로딩 끝
+            resolve(data);
+        }, (error) => {
+            console.error('Error sending prompt:', error);
+            is_loading.set(false); // 로딩 끝
+            reject(error);
+        });
+    });
+}
+
+export async function makeGeminiText(question, keyword) {
+    is_loading2.set(true);
+    return new Promise((resolve, reject) => {
+        fastapi('post', '/api/gemini/text', { question, keyword }, (data) => {
+            is_loading2.set(false);
+            gemini_response.set(data.response);
             resolve(data);
         }, (error) => {
             is_loading2.set(false);

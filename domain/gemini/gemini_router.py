@@ -12,6 +12,14 @@ router = APIRouter(
     prefix="/api/gemini",
 )
 
+router.get('/user_list', response_model=list[gemini_schema.Gemini])
+def gemini_list(
+        db: Session = Depends(get_db),
+        current_user: user_schema.User = Depends(get_current_user)
+):
+    _gemini_list = gemini_crud.get_gemini_list(db, user_id = current_user.id)
+    return _gemini_list
+
 router.post('/gpt')
 async def get_keyword(
     query: gemini_schema.Query,
@@ -23,7 +31,7 @@ async def get_keyword(
     
     return {"category": query.category , "question": new_question.subject, "answer": new_question.content}
 
-@router.post('/gemini')
+@router.post('/text')
 async def make_text_gemini(
     query: gemini_schema.Query2,
     db: Session = Depends(get_db),

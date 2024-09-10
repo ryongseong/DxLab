@@ -189,7 +189,7 @@
           <strong style="color: #9470F7;">AI</strong>가 주는 키워드로 내용 손실 최소화!! <br><br>
           자기소개서에 특화 되어있는 <strong style="color: #9470F7;">AI시스템</strong>!!
       </div>
-      <a use:link href="/self">
+      <a use:link href="/select">
         <button class="button">작성하기</button>
       </a>
     </div>

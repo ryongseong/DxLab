@@ -1,8 +1,16 @@
+import re
+import json
+
+from langchain_core.prompts import PromptTemplate
+from langchain_ollama import OllamaLLM
+
 from datetime import datetime
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from models import Exam, TestQuestion, Choice, Attempt, Answer, User
 from domain.exam.exam_schema import ExamCreate, TestQuestionCreate, ChoiceCreate, AttemptCreate, AnswerCreate
+
+llm = OllamaLLM(model="llama3.1", stop=["<|eot_id|>"])
 
 def create_exam(db: Session, exam_data: ExamCreate, user_id: int) -> Exam:
     db_exam = Exam(
@@ -18,7 +26,9 @@ def create_exam(db: Session, exam_data: ExamCreate, user_id: int) -> Exam:
     for question_data in exam_data.questions:
         db_question = TestQuestion(
             content=question_data.content,
-            exam_id=db_exam.exam_id
+            exam_id=db_exam.exam_id,
+            correct_choice_id = question_data.correct_choice_id, 
+            description = question_data.description
         )
         db.add(db_question)
         db.commit()
@@ -43,13 +53,24 @@ def get_exam(db: Session, exam_id: int):
     return exam
 
 def get_exam_questions(db: Session, exam_id: int):
-    return db.query(TestQuestion).filter(TestQuestion.exam_id == exam_id).all()
+    # 시험에 속한 모든 질문을 가져오기
+    questions = db.query(TestQuestion).options(joinedload(TestQuestion.choices)).filter(TestQuestion.exam_id == exam_id).all()
+    
+    # 질문이 없으면 None 반환
+    if not questions:
+        return None
+    return questions
 
 def get_exam_question_id(db: Session, question: TestQuestion):
-    return db.query(TestQuestion).filter(TestQuestion.content == question.content).first().question_id
+    return question.question_id
 
 def get_exam_choices(db: Session, question_id: int):
-    return db.query(Choice).filter(Choice.question_id == question_id).all()
+    choices = db.query(Choice).filter(Choice.question_id == question_id).all()
+    
+    # 선택지가 없을 경우 None 또는 빈 리스트 반환
+    if not choices:
+        return []
+    return choices
 
 def submit_attempt(db: Session, attempt_data: AttemptCreate, user_id: int) -> Attempt:
     db_attempt = Attempt(
@@ -79,3 +100,66 @@ def submit_attempt(db: Session, attempt_data: AttemptCreate, user_id: int) -> At
     db_attempt.score = score
     db.commit()
     return db_attempt
+
+# 텍스트를 문제별로 나누기 위해 패턴을 사용하여 분리
+def split_text(text):
+    problems = re.split(r"\n\*\*", text)
+    return problems
+
+# 각 문제를 파싱하여 문제, 보기, 정답, 설명으로 나누는 함수
+def parse_problem(problem_text):
+    # 문제 제목 추출
+    title = re.search(r"\*\*(.*?)\*\*", problem_text)
+    title = title.group(1) if title else "제목 없음"
+    
+    # 문제 번호 및 질문 추출
+    question_match = re.search(r"(\d+)\.\s(.*?)(\n\d\))", problem_text)
+    question = question_match.group(2) if question_match else "질문 없음"
+    
+    # 보기 추출
+    options = re.findall(r"\d\)\s(.*?)\n", problem_text)
+    
+    # 정답 추출
+    answer_match = re.search(r"\* 정답 : (\d)", problem_text)
+    answer = answer_match.group(1) if answer_match else "정답 없음"
+    
+    # 설명 추출
+    explanation_match = re.search(r"# 설명 : (.*)", problem_text)
+    explanation = explanation_match.group(1) if explanation_match else "설명 없음"
+    
+    return {
+        "제목": title,
+        "질문": question,
+        "보기": options,
+        "정답": answer,
+        "설명": explanation
+    }
+
+async def Ollama():
+    prompts = await load_prompts(filename="prompts.json")
+    data = await get_model_response(prompts['system_prompt'], prompts['user_prompt'])
+    return data
+
+async def get_model_response(user_prompt, system_prompt):
+    template = """
+        <|begin_of_text|>
+        <|start_header_id|>system<|end_header_id|>
+        {system_prompt}
+        <|eot_id|>
+        <|start_header_id|>user<|end_header_id|>
+        {user_prompt}
+        <|eot_id|>
+        <|start_header_id|>assistant<|end_header_id|>
+        # 단계별로 생각해봅시다.
+    """
+    prompt = PromptTemplate(
+        input_variables=["system_prompt", "user_prompt"],
+        template=template
+    )
+
+    # response = llm(prompt.format(system_prompt=system_prompt, user_prompt=user_prompt))
+    response = llm.invoke(prompt.format(system_prompt=system_prompt, user_prompt=user_prompt))
+    return response
+async def load_prompts(filename):
+    with open(filename, 'r') as file:
+        return json.load(file)
