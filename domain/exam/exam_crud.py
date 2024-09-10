@@ -12,7 +12,42 @@ from domain.exam.exam_schema import ExamCreate, TestQuestionCreate, ChoiceCreate
 
 llm = OllamaLLM(model="llama3.1", stop=["<|eot_id|>"])
 
-def create_exam(db: Session, exam_data: ExamCreate, user_id: int) -> Exam:
+async def Ollama():
+    prompts = await load_prompts(filename="data/prompts.json")
+    data = await get_model_response(prompts['system_prompt'], prompts['user_prompt'])
+
+    problems = split_text(data)
+
+    parsed_problems = [parse_problem(problem) for problem in problems]
+
+    return parsed_problems
+
+async def get_model_response(user_prompt, system_prompt):
+    template = """
+        <|begin_of_text|>
+        <|start_header_id|>system<|end_header_id|>
+        {system_prompt}
+        <|eot_id|>
+        <|start_header_id|>user<|end_header_id|>
+        {user_prompt}
+        <|eot_id|>
+        <|start_header_id|>assistant<|end_header_id|>
+        # 단계별로 생각해봅시다.
+    """
+    prompt = PromptTemplate(
+        input_variables=["system_prompt", "user_prompt"],
+        template=template
+    )
+
+    # response = llm(prompt.format(system_prompt=system_prompt, user_prompt=user_prompt))
+    response = llm.invoke(prompt.format(system_prompt=system_prompt, user_prompt=user_prompt))
+    return response
+
+async def load_prompts(filename):
+    with open(filename, 'r') as file:
+        return json.load(file)
+
+async def create_exam(db: Session, exam_data: ExamCreate, user_id: int) -> Exam:
     db_exam = Exam(
         title=exam_data.title,
         description=exam_data.description,
@@ -23,26 +58,29 @@ def create_exam(db: Session, exam_data: ExamCreate, user_id: int) -> Exam:
     db.commit()
     db.refresh(db_exam)
 
-    for question_data in exam_data.questions:
+    llama_questions = await Ollama()
+
+    # Step 3: Llama 모델의 응답을 파싱하여 생성된 문제를 데이터베이스에 저장
+    for question_data in llama_questions:
         db_question = TestQuestion(
-            content=question_data.content,
+            content=question_data['question'],
             exam_id=db_exam.exam_id,
-            correct_choice_id = question_data.correct_choice_id, 
-            description = question_data.description
+            correct_choice_id=int(question_data['correct_answer']),  # 정답 인덱스
+            description=question_data['explanation']  # 설명 추가
         )
         db.add(db_question)
         db.commit()
         db.refresh(db_question)
 
-        for choice_data in question_data.choices:
+        # 각 문제의 선택지를 저장
+        for i, option in enumerate(question_data['options']):
             db_choice = Choice(
-                content=choice_data.content,
-                is_correct=choice_data.is_correct,
+                content=option,
+                is_correct=(i + 1 == int(question_data['correct_answer'])),  # 선택지 번호와 정답 비교
                 question_id=db_question.question_id
             )
             db.add(db_choice)
             db.commit()
-            db.refresh(db_choice)
 
     return db_exam
 
@@ -119,47 +157,18 @@ def parse_problem(problem_text):
     # 보기 추출
     options = re.findall(r"\d\)\s(.*?)\n", problem_text)
     
-    # 정답 추출
-    answer_match = re.search(r"\* 정답 : (\d)", problem_text)
-    answer = answer_match.group(1) if answer_match else "정답 없음"
-    
     # 설명 추출
     explanation_match = re.search(r"# 설명 : (.*)", problem_text)
     explanation = explanation_match.group(1) if explanation_match else "설명 없음"
     
+    # 정답 추출
+    answer_match = re.search(r"\* 정답 : (\d)", problem_text)
+    answer = answer_match.group(1) if answer_match else None
+
     return {
-        "제목": title,
-        "질문": question,
-        "보기": options,
-        "정답": answer,
-        "설명": explanation
+        "title": title,
+        "question": question,
+        "options": options,
+        "correct_answer": answer,
+        "explanation": explanation  # 설명 따로 저장
     }
-
-async def Ollama():
-    prompts = await load_prompts(filename="prompts.json")
-    data = await get_model_response(prompts['system_prompt'], prompts['user_prompt'])
-    return data
-
-async def get_model_response(user_prompt, system_prompt):
-    template = """
-        <|begin_of_text|>
-        <|start_header_id|>system<|end_header_id|>
-        {system_prompt}
-        <|eot_id|>
-        <|start_header_id|>user<|end_header_id|>
-        {user_prompt}
-        <|eot_id|>
-        <|start_header_id|>assistant<|end_header_id|>
-        # 단계별로 생각해봅시다.
-    """
-    prompt = PromptTemplate(
-        input_variables=["system_prompt", "user_prompt"],
-        template=template
-    )
-
-    # response = llm(prompt.format(system_prompt=system_prompt, user_prompt=user_prompt))
-    response = llm.invoke(prompt.format(system_prompt=system_prompt, user_prompt=user_prompt))
-    return response
-async def load_prompts(filename):
-    with open(filename, 'r') as file:
-        return json.load(file)

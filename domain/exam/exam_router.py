@@ -2,8 +2,8 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
-from domain.exam.exam_crud import create_exam, get_exam, get_exam_choices, get_exam_question_id, submit_attempt, get_exam_questions
-from domain.exam.exam_schema import ExamCreate, Exam, AttemptCreate, Attempt, TestQuestion
+from domain.exam.exam_crud import Ollama, create_exam, get_exam, get_exam_choices, get_exam_question_id, submit_attempt, get_exam_questions
+from domain.exam.exam_schema import ChoiceCreate, ExamCreate, Exam, AttemptCreate, Attempt, TestQuestion, TestQuestionCreate
 from domain.user import user_schema
 from domain.user.user_router import get_current_user
 from models import Exam as EX
@@ -17,13 +17,23 @@ def list_exams(db: Session = Depends(get_db)):
     exams = db.query(EX).all()
     return exams
 
+# @router.post("/")
+# def create_exam_endpoint(
+#     exam: ExamCreate,
+#     db: Session = Depends(get_db),
+#     current_user: user_schema.User = Depends(get_current_user)
+# ):
+#     return create_exam(db, exam, current_user.id)
+
 @router.post("/")
-def create_exam_endpoint(
-    exam: ExamCreate,
+async def create_exam_endpoint(
+    exam_data: ExamCreate,
     db: Session = Depends(get_db),
     current_user: user_schema.User = Depends(get_current_user)
 ):
-    return create_exam(db, exam, current_user.id)
+    # 그냥 요청을 받아서 CRUD의 create_exam 함수로 넘겨주는 역할
+    return await create_exam(db, exam_data, current_user.id)  # Ollama 호출과 문제 생성은 create_exam에서 처리됨
+
 
 @router.get("/{exam_id}")
 def read_exam(exam_id: int, db: Session = Depends(get_db)):

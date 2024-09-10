@@ -45,6 +45,7 @@ class Exam(Base):
 
     exam_id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
+    description = Column(String, nullable=True)  # description 필드를 추가
     create_date = Column(DateTime, default=datetime.now)
     user_id = Column(Integer, ForeignKey("user.id"))
 

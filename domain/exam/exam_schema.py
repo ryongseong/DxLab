@@ -33,7 +33,6 @@ class ExamCreate(BaseModel):
     title: str
     description: Optional[str]
     user_id: int
-    questions: List[TestQuestionCreate]
 
 class Exam(BaseModel):
     exam_id: int
