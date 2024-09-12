@@ -11,8 +11,9 @@ class Choice(BaseModel):
     content: str
     is_correct: bool
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        'from_attributes': True
+    }
 
 class TestQuestionCreate(BaseModel):
     content: str
@@ -26,8 +27,9 @@ class TestQuestion(BaseModel):
     description: Optional[str]
     choices: List[Choice]
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        'from_attributes': True
+    }
 
 class ExamCreate(BaseModel):
     title: str
@@ -42,8 +44,9 @@ class Exam(BaseModel):
     user_id: int
     questions: List[TestQuestion]
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        'from_attributes': True
+    }
 
 class AnswerCreate(BaseModel):
     question_id: int
@@ -61,5 +64,6 @@ class Attempt(BaseModel):
     score: int
     attempt_date: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        'from_attributes': True
+    }

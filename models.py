@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Integer, String, Column, Text, DateTime, ForeignKey
+from sqlalchemy import Boolean, Integer, String, Column, Text, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
@@ -45,7 +45,7 @@ class Exam(Base):
 
     exam_id = Column(Integer, primary_key=True, index=True)
     title = Column(String, nullable=False)
-    description = Column(String, nullable=True)  # description 필드를 추가
+    description = Column(String, nullable=True)
     create_date = Column(DateTime, default=datetime.now)
     user_id = Column(Integer, ForeignKey("user.id"))
 
@@ -55,40 +55,32 @@ class Exam(Base):
 
 
 class TestQuestion(Base):
-    __tablename__ = "test_questions"
+    __tablename__ = 'test_questions'
 
-    question_id = Column(Integer, primary_key=True, index=True)
-    exam_id = Column(Integer, ForeignKey("exams.exam_id", ondelete="CASCADE"))
+    question_id = Column(Integer, primary_key=True)
+    exam_id = Column(Integer, ForeignKey('exams.exam_id', ondelete="CASCADE"))
     content = Column(Text, nullable=False)
-    correct_choice_id = Column(Integer, ForeignKey("choices.choice_id", ondelete="SET NULL"),  nullable=True)
+    correct_choice_id = Column(Integer, ForeignKey('choices.choice_id', ondelete='SET NULL'), nullable=True)
     description = Column(Text, nullable=False)
 
     exam = relationship("Exam", back_populates="questions")
-    correct_choice = relationship(
-        "Choice",
-        foreign_keys=[correct_choice_id],
-        back_populates="question",  # 여기를 'question'으로 수정
-        uselist=False  # 이 관계가 하나의 객체만 반환하도록 설정
-    )
-    choices = relationship(
-        "Choice",
-        foreign_keys="[Choice.question_id]",
-        back_populates="question"  # 'question'이라는 역방향 관계가 Choice 모델에 정의되어 있어야 합니다.
-    )
-class Choice(Base):
-    __tablename__ = "choices"
+    correct_choice = relationship("Choice", foreign_keys=[correct_choice_id], uselist=False, back_populates="correct_question")
+    choices = relationship("Choice", back_populates="question", foreign_keys="[Choice.question_id]")
 
-    choice_id = Column(Integer, primary_key=True, index=True)
-    question_id = Column(Integer, ForeignKey("test_questions.question_id"), onupdate="CASCADE")
+class Choice(Base):
+    __tablename__ = 'choices'
+
+    choice_id = Column(Integer, primary_key=True)
+    question_id = Column(Integer, ForeignKey('test_questions.question_id', onupdate="CASCADE"))
     content = Column(Text, nullable=False)
     is_correct = Column(Boolean, default=False)
 
-    question = relationship(
-        "TestQuestion",
-        back_populates="choices",  # 'choices'가 TestQuestion 모델에 정의된 관계 이름입니다.
-        foreign_keys=[question_id]
-    )
+    question = relationship("TestQuestion", back_populates="choices", foreign_keys=[question_id])
+    correct_question = relationship("TestQuestion", foreign_keys="[TestQuestion.correct_choice_id]", uselist=False, back_populates="correct_choice")
 
+    __table_args__ = (
+        UniqueConstraint('question_id', 'content', name='uq_question_choice_content'),
+    )
 
 class Attempt(Base):
     __tablename__ = "attempts"

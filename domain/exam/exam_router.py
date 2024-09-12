@@ -2,8 +2,9 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
-from domain.exam.exam_crud import Ollama, create_exam, get_exam, get_exam_choices, get_exam_question_id, submit_attempt, get_exam_questions
-from domain.exam.exam_schema import ChoiceCreate, ExamCreate, Exam, AttemptCreate, Attempt, TestQuestion, TestQuestionCreate
+from domain.exam.exam_schema import Exam as ExamSchema
+from domain.exam.exam_crud import Ollama, create_exam, get_exam, get_exam_with_questions_and_choices, submit_attempt
+from domain.exam.exam_schema import ChoiceCreate, ExamCreate, AttemptCreate, Attempt, TestQuestion, TestQuestionCreate
 from domain.user import user_schema
 from domain.user.user_router import get_current_user
 from models import Exam as EX
@@ -42,28 +43,40 @@ def read_exam(exam_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Exam not found")
     return db_exam
 
-# @router.get('/{exam_id}/questions')
-# def read_exam_questions(exam_id: int, db: Session = Depends(get_db)):
-#     db_exam_questions = get_exam(db, exam_id)
-#     if db_exam_questions is None:
-#         raise HTTPException(status_code=404, detail="Exam Questions Not Found")
-#     return db_exam_questions
-
-# 시험에 대한 문제 목록을 반환하는 엔드포인트
-@router.get('/{exam_id}/questions', response_model=List[TestQuestion])
-def read_exam_questions(exam_id: int, db: Session = Depends(get_db)):
-    try:
-        db_exam_questions = get_exam_questions(db, exam_id)
-
-        if db_exam_questions is None or len(db_exam_questions) == 0:
-            raise HTTPException(status_code=404, detail="Questions not found")
-
-        # Pydantic 모델로 직렬화
-        return [TestQuestion.from_orm(q) for q in db_exam_questions]
+@router.get("/{exam_id}/questions", response_model=ExamSchema)
+def read_exam_with_questions_and_choices(exam_id: int, db: Session = Depends(get_db)):
+    exam = get_exam_with_questions_and_choices(db, exam_id)
     
-    except Exception as e:
-        print(f"Error fetching exam questions: {e}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+    if exam is None:
+        raise HTTPException(status_code=404, detail="Exam not found")
+    
+    # SQLAlchemy ORM 객체를 Pydantic 모델로 수동 변환
+    exam_dict = {
+        'exam_id': exam.exam_id,
+        'title': exam.title,
+        'description': exam.description,
+        'create_date': exam.create_date,
+        'user_id': exam.user_id,
+        'questions': [
+            {
+                'id': question.question_id,
+                'content': question.content,
+                'description': question.description,
+                'choices': [
+                    {
+                        'id': choice.choice_id,
+                        'content': choice.content,
+                        'is_correct': choice.is_correct
+                    }
+                    for choice in question.choices
+                ]
+            }
+            for question in exam.questions
+        ]
+    }
+    
+    # 변환된 데이터를 Pydantic 모델로 변환
+    return ExamSchema.model_validate(exam_dict)
 
 
 

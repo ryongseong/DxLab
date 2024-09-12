@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: dxlab
+      POSTGRES_PASSWORD: dxlab
+      POSTGRES_DB: dxlab
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  
+  web:
+    build: .
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    env_file: 
+      - .env  # .env 파일을 참조합니다.
+
+  frontend:
+    build:
+      context: ./frontend  # Svelte 프로젝트의 경로
+      dockerfile: Dockerfile  # frontend 폴더 내의 Dockerfile
+    volumes:
+      - ./frontend:/app  # Svelte 프로젝트 디렉토리를 매핑
+    ports:
+      - "3000:80"
+    depends_on:
+      - web
+    env_file: 
+      - .env  # .env 파일을 참조합니다.
+
+volumes:
+  postgres_data:
