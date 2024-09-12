@@ -10,14 +10,16 @@
     let prompt = '';
 
     let categories = [
-        "지원동기",
+        "지원 동기",
         "입사 후 포부",
         "성장 과정",
         "성격의 장단점",
         "직무 역량",
         "사회 이슈",
-        "경험",
-        "기타"
+        "극복 경험",
+        "협업 경험",
+        "자유 양식",
+        "기타(취미 또는 특기)"
     ]
     
     let selected;
@@ -120,8 +122,7 @@
             extractedKeywords = [...extractKeywords];
 
             if (extractKeywords.length === 0) {
-                alert('키워드를 추출할 수 없습니다.');
-                return;
+                console.warn('No Keywords extracted')
             }
         } catch (error) {
             console.error('Error:', error);
@@ -144,19 +145,6 @@
         // 상태 업데이트를 즉시 반영
         selectedKeywords = [...selectedKeywords];
     }
-
-    function copyToClipboard() {
-        if (generatedText.trim() !== '') {
-            navigator.clipboard.writeText(generatedText)
-                .then(() => {
-                    alert('텍스트가 클립보드에 복사되었습니다.');
-                })
-                .catch(err => {
-                    console.error('텍스트 복사 실패: ', err);
-                })
-        }
-    }
-
     async function generateGeminiText() {
         if (selectedKeywords.length > 0) {
             try {
@@ -172,6 +160,19 @@
             }
         }
     }
+
+    function copyToClipboard() {
+        if (generatedText.trim() !== '') {
+            navigator.clipboard.writeText(generatedText)
+                .then(() => {
+                    alert('텍스트가 클립보드에 복사되었습니다.');
+                })
+                .catch(err => {
+                    console.error('텍스트 복사 실패: ', err);
+                })
+        }
+    }
+
 
     onMount(async () => {
         if (localStorage.getItem('access_token')) {

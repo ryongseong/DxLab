@@ -155,8 +155,6 @@
     async function generateText() {
         if (selectedKeywords.length > 0) {
             try {
-                console.log(prompt);
-                console.log('Generating text with keywords:', selectedKeywords);
                 const gptResponse = await makeText(prompt, selectedKeywords);
                 generatedText = gptResponse.answer;
 
@@ -213,6 +211,83 @@
         }
     });
 </script>
+
+<div class="container">
+    <div class="input-and-keywords">
+        <div class="input-group">
+            <select
+                class="form-select"
+                bind:value={category}
+                on:change={() => console.log(category)}
+            >
+                <option disabled selected value="">입력란 선택</option>
+                {#each categories as cat}
+                    <option value={cat}>{cat}</option>
+                {/each}
+            </select>
+            <textarea
+                class="form-control"
+                placeholder="Enter your prompt"
+                bind:value={prompt}
+                on:keypress={handleKeyPress}
+            />
+            <button class="btn" on:click={handleSendPrompt}>추출하기</button>
+        </div>
+
+        <div class="keyword-box">
+            {#if $is_loading}
+                <div class="mx-auto d-flex justify-content-center">
+                    <span class="navbar-text loading-animation">
+                        {loadingText}
+                    </span>
+                </div>
+            {/if}
+            {#each extractedKeywords as keyword}
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <div
+                    class="keyword {selectedKeywords.includes(keyword) ? 'selected' : ''}"
+                    on:click={() => toggleKeywordSelection(keyword)}
+                >
+                    {keyword}
+                    <input
+                        type="checkbox"
+                        class="keyword-checkbox"
+                        checked={selectedKeywords.includes(keyword)}
+                        on:change={() => toggleKeywordSelection(keyword)}
+                    />
+                </div>
+            {/each}
+        </div>
+    </div>
+
+    <div class="selected-keywords-and-action">
+        <div class="selected-keywords">
+            {#each selectedKeywords as keyword}
+                <div class="keyword selected">{keyword}</div>
+            {/each}
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn-success" on:click={generateText}>생성하기</button>
+        </div>
+    </div>
+    
+    
+    <div class="generated-text-area">
+        {#if $is_loading2}
+            <div class="mx-auto d-flex justify-content-center">
+                <span class="navbar-text loading-animation">
+                    {loadingText}
+                </span>
+            </div>
+        {/if}
+        {#if renderHTML}
+            {@html renderHTML}
+        {/if}
+    </div>
+    <button class="btn-copy" on:click={copyToClipboard}>복사하기</button>
+</div>
 
 <style>
     .container {
@@ -372,83 +447,6 @@
         background-color: #2980b9;
     }
 </style>
-
-<div class="container">
-    <div class="input-and-keywords">
-        <div class="input-group">
-            <select
-                class="form-select"
-                bind:value={category}
-                on:change={() => console.log(category)}
-            >
-                <option disabled selected value="">입력란 선택</option>
-                {#each categories as cat}
-                    <option value={cat}>{cat}</option>
-                {/each}
-            </select>
-            <textarea
-                class="form-control"
-                placeholder="Enter your prompt"
-                bind:value={prompt}
-                on:keypress={handleKeyPress}
-            />
-            <button class="btn" on:click={handleSendPrompt}>추출하기</button>
-        </div>
-
-        <div class="keyword-box">
-            {#if $is_loading}
-                <div class="mx-auto d-flex justify-content-center">
-                    <span class="navbar-text loading-animation">
-                        {loadingText}
-                    </span>
-                </div>
-            {/if}
-            {#each extractedKeywords as keyword}
-                <!-- svelte-ignore a11y-no-static-element-interactions -->
-                <!-- svelte-ignore a11y-click-events-have-key-events -->
-                <div
-                    class="keyword {selectedKeywords.includes(keyword) ? 'selected' : ''}"
-                    on:click={() => toggleKeywordSelection(keyword)}
-                >
-                    {keyword}
-                    <input
-                        type="checkbox"
-                        class="keyword-checkbox"
-                        checked={selectedKeywords.includes(keyword)}
-                        on:change={() => toggleKeywordSelection(keyword)}
-                    />
-                </div>
-            {/each}
-        </div>
-    </div>
-
-    <div class="selected-keywords-and-action">
-        <div class="selected-keywords">
-            {#each selectedKeywords as keyword}
-                <div class="keyword selected">{keyword}</div>
-            {/each}
-        </div>
-
-        <div class="action-buttons">
-            <button class="btn-success" on:click={generateText}>생성하기</button>
-        </div>
-    </div>
-    
-    
-    <div class="generated-text-area">
-        {#if $is_loading2}
-            <div class="mx-auto d-flex justify-content-center">
-                <span class="navbar-text loading-animation">
-                    {loadingText}
-                </span>
-            </div>
-        {/if}
-        {#if renderHTML}
-            {@html renderHTML}
-        {/if}
-    </div>
-    <button class="btn-copy" on:click={copyToClipboard}>복사하기</button>
-</div>
 
 <!-- <div class="table mt-4">
     <thead>
