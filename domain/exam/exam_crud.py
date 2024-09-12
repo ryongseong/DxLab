@@ -154,19 +154,21 @@ def parse_problem(problem_text):
     question_match = re.search(r"(\d+)\.\s(.*?)(\n\d\))", problem_text)
     question = question_match.group(2) if question_match else "질문 없음"
     
-    # 보기 추출
-    options = re.findall(r"\d\)\s(.*?)\n", problem_text)
-    
     # 설명 추출
     explanation_match = re.search(r"# 설명 : (.*)", problem_text)
     explanation = explanation_match.group(1) if explanation_match else "설명 없음"
+    
+    # 설명을 제거한 텍스트에서 보기 추출
+    problem_text_without_explanation = re.sub(r"# 설명 : (.*)", "", problem_text)
+    
+    # 보기 추출
+    options = re.findall(r"\d\)\s(.*?)\n", problem_text_without_explanation)
     
     # 정답 추출
     answer_match = re.search(r"\* 정답 : (\d)", problem_text)
     answer = answer_match.group(1) if answer_match else None
 
     return {
-        "title": title,
         "question": question,
         "options": options,
         "correct_answer": answer,
