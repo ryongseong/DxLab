@@ -27,7 +27,7 @@ services:
     depends_on:
       - db
     env_file: 
-      - .env  # .env 파일을 참조합니다.
+      - .env
     logging:
       driver: "json-file"
       options:
@@ -36,16 +36,16 @@ services:
 
   frontend:
     build:
-      context: ./frontend  # Svelte 프로젝트의 경로
-      dockerfile: Dockerfile  # frontend 폴더 내의 Dockerfile
+      context: ./frontend
+      dockerfile: Dockerfile
     volumes:
-      - ./frontend:/app  # Svelte 프로젝트 디렉토리를 매핑
+      - ./frontend:/app
     ports:
       - "3000:80"
     depends_on:
       - web
     env_file: 
-      - .env  # .env 파일을 참조합니다.
+      - .env
     logging:
       driver: "json-file"
       options:
