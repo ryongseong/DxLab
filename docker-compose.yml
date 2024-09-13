@@ -11,7 +11,12 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-  
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   web:
     build: .
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
@@ -23,6 +28,11 @@ services:
       - db
     env_file: 
       - .env  # .env 파일을 참조합니다.
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   frontend:
     build:
@@ -36,6 +46,11 @@ services:
       - web
     env_file: 
       - .env  # .env 파일을 참조합니다.
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   postgres_data:
