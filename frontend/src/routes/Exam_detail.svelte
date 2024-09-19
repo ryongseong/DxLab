@@ -3,26 +3,22 @@
     import Image_A from "/public/image5.png?enhanced";
     import { onMount } from "svelte";
     
-    export let params; // props로 params를 가져옴
+    export let params;
     let examData = { title: "", questions: [] };
     let isLoading = true;
     let showAnswers = false;
     let selectedAnswers = [];
     let exam_id;
+    let score = 0;
 
     onMount(() => {
-        // params를 콘솔에 출력해서 제대로 전달되는지 확인
-        console.log("Params:", params);
-
-        // params.exam_id 값이 존재하는지 확인
         if (params && params.exam_id) {
             exam_id = params.exam_id;
+            fetchExamData();
         } else {
             console.error("exam_id가 존재하지 않습니다.");
-            return;
+            isLoading = false; // Stop loading spinner if no exam_id
         }
-        
-        fetchExamData()
     });
 
     function fetchExamData() {
@@ -30,11 +26,7 @@
             const url = `/api/exam/${exam_id}/questions`;  // 쿼리 스트링을 빼고 URL을 설정
             fastapi('get', url, null, 
                 (json) => {
-                    console.log("Success:", json[0]);
-                    json.forEach(element => {
-                        examData = element
-                    });
-                    // examData = json;  // 데이터가 있으면 examData에 할당
+                    examData = json;  // 데이터가 있으면 examData에 할당
                 },
                 (error) => {
                     console.error("Error fetching exam data:", error);
@@ -49,15 +41,14 @@
     }
 
     function selectAnswer(questionId, optionId) {
-        selectedAnswers = selectedAnswers.map(answer => 
-            answer.questionId === questionId 
-            ? { ...answer, selectedChoiceId: optionId } 
-            : answer
-        );
-
-        if (!selectedAnswers.find(answer => answer.questionId === questionId)) {
-            selectedAnswers.push({ questionId, selectedChoiceId: optionId });
+        const existingAnswer = selectedAnswers.find(answer => answer.question_id === questionId);
+        
+        if (existingAnswer) {
+            existingAnswer.selected_choice_id = optionId;
+        } else {
+            selectedAnswers.push({ question_id: questionId, selected_choice_id: optionId });
         }
+        console.log(selectedAnswers);
     }
 
     async function submitExam() {
@@ -65,18 +56,26 @@
             console.error("exam_id 파라미터가 없습니다.");
             return;
         }
-        try {
-            const response = await fastapi('post', `/api/exam/${exam_id}/attempt`, {
-                exam_id: examId,
-                answers: selectedAnswers
-            });
 
-            if (response && response.score !== undefined) {
-                showAnswers = true;
-                alert(`${response.score}개 맞추셨습니다.`);
-            } else {
-                console.error('No valid data received:', response);
-            }
+        try {
+            fastapi('post', `/api/exam/${exam_id}/attempt`, {
+                exam_id: exam_id,
+                answers: selectedAnswers
+            },
+            (json) => {
+                // 성공적으로 응답을 받으면 점수를 업데이트
+                score = json.score;
+                if (score !== undefined) {
+                    showAnswers = true;
+                    alert(`${score}개 맞추셨습니다.`);
+                } else {
+                    console.error('Invalid response:', json);
+                }
+            },
+            (error) => {
+                console.error("Error submitting exam:", error);
+                alert('시험 제출 중 오류가 발생했습니다.');
+            });
         } catch (error) {
             console.error('Error submitting exam:', error);
             alert('시험 제출 중 오류가 발생했습니다.');
@@ -94,28 +93,33 @@
         </div>
         <div class="card-container">
             <div class="card-box">
-                {#each examData.questions as question}
+                {#each examData.questions as question, index}
                 <div class="question">
                     <div class="question-title">
-                        <span class="question-id">{question.id}.</span>
+                        <span class="question-id">{index + 1}.</span>
                         <span class="question-text">{question.content}</span>
                     </div>
                     <ul class="options">
                         {#if showAnswers}
                             <p class="answer">
-                                답: {question.choices.find(option => option.is_correct).content}
+                                답: {question.choices.find(option => option.is_correct)?.content || "답 없음"}
                             </p>
                         {/if}
                         {#each question.choices as option}
                             <li
                                 class="option"
-                                style="color: {showAnswers && selectedAnswers.find(answer => answer.questionId === question.id)?.selectedChoiceId === option.id ? (option.is_correct ? 'blue' : 'red') : 'inherit'};"
+                                style="color: {
+                                    showAnswers && 
+                                    selectedAnswers.find(answer => answer.question_id === question.id)?.selected_choice_id === option.id
+                                    ? (option.is_correct ? 'blue' : 'red') 
+                                    : 'inherit'
+                                };"
                             >
                                 <label>
                                     <input
                                         type="radio"
                                         name="question-{question.id}"
-                                        checked={selectedAnswers.find(answer => answer.questionId === question.id)?.selectedChoiceId === option.id}
+                                        checked={selectedAnswers.find(answer => answer.question_id === question.id)?.selected_choice_id === option.id}
                                         on:change={() => selectAnswer(question.id, option.id)}
                                         disabled={showAnswers}
                                     />
@@ -124,6 +128,9 @@
                             </li>
                         {/each}
                     </ul>
+                    {#if showAnswers && selectedAnswers.find(answer => answer.question_id === question.id)?.selected_choice_id !== question.choices.find(option => option.is_correct)?.id}
+                        <p class="description">설명: {question.description}</p>
+                    {/if}
                 </div>
                 {/each}
             </div>
@@ -212,15 +219,6 @@
         gap: 10px;
     }
 
-    /* .option {
-        margin-bottom: 5px;
-    }
-    
-    .option input {
-        margin-right: 10px;
-        transform: scale(1.5);
-    } */
-
     .answer {
         text-align: end;
         margin-right: 8rem;
@@ -242,6 +240,7 @@
     .submit-button:hover {
         background-color: #8a56d8;
     }
+
     .button-wrapper {
         display: flex;
         margin-bottom: 20px;

@@ -18,14 +18,6 @@ def list_exams(db: Session = Depends(get_db)):
     exams = db.query(EX).all()
     return exams
 
-# @router.post("/")
-# def create_exam_endpoint(
-#     exam: ExamCreate,
-#     db: Session = Depends(get_db),
-#     current_user: user_schema.User = Depends(get_current_user)
-# ):
-#     return create_exam(db, exam, current_user.id)
-
 @router.post("/")
 async def create_exam_endpoint(
     exam_data: ExamCreate,
@@ -34,7 +26,6 @@ async def create_exam_endpoint(
 ):
     # 그냥 요청을 받아서 CRUD의 create_exam 함수로 넘겨주는 역할
     return await create_exam(db, exam_data, current_user.id)  # Ollama 호출과 문제 생성은 create_exam에서 처리됨
-
 
 @router.get("/{exam_id}")
 def read_exam(exam_id: int, db: Session = Depends(get_db)):
@@ -78,17 +69,16 @@ def read_exam_with_questions_and_choices(exam_id: int, db: Session = Depends(get
     # 변환된 데이터를 Pydantic 모델로 변환
     return ExamSchema.model_validate(exam_dict)
 
-
-
 @router.post("/{exam_id}/attempt", response_model=Attempt)
-def attempt_exam(
+async def attempt_exam(
     exam_id: int,
     attempt_data: AttemptCreate,
     db: Session = Depends(get_db),
     current_user: user_schema.User = Depends(get_current_user)
 ):
     attempt_data.exam_id = exam_id
-    return submit_attempt(db, attempt_data, current_user.id)
+    attempt = await submit_attempt(db, attempt_data, current_user.id)
+    return attempt
 
 @router.get("/{exam_id}/attempts", response_model=List[Attempt])
 def get_attempts(exam_id: int, db: Session = Depends(get_db), current_user: user_schema.User = Depends(get_current_user)):

@@ -14,8 +14,11 @@ from domain.exam.exam_schema import ExamCreate, TestQuestionCreate, ChoiceCreate
 llm = OllamaLLM(model="llama3.1", stop=["<|eot_id|>"])
 
 async def Ollama():
-    prompts = await load_prompts(filename="data/prompts.json")
-    data = await get_model_response(prompts['system_prompt'], prompts['user_prompt'])
+    # prompts = await load_prompts(filename="data/prompts.json")
+    # data = await get_model_response(prompts['system_prompt'], prompts['user_prompt'])
+
+    with open('./data/20240904.txt', 'r', encoding='utf-8') as file:
+        data = file.read()
 
     problems = split_text(data)
 
@@ -121,8 +124,7 @@ def get_exam_with_questions_and_choices(db: Session, exam_id: int):
     
     return exam
 
-
-def submit_attempt(db: Session, attempt_data: AttemptCreate, user_id: int) -> Attempt:
+async def submit_attempt(db: Session, attempt_data: AttemptCreate, user_id: int) -> Attempt:    
     db_attempt = Attempt(
         exam_id=attempt_data.exam_id,
         user_id=user_id,
@@ -134,6 +136,7 @@ def submit_attempt(db: Session, attempt_data: AttemptCreate, user_id: int) -> At
     db.refresh(db_attempt)
 
     score = 0
+
     for answer_data in attempt_data.answers:
         db_answer = Answer(
             attempt_id=db_attempt.attempt_id,
@@ -141,15 +144,26 @@ def submit_attempt(db: Session, attempt_data: AttemptCreate, user_id: int) -> At
             selected_choice_id=answer_data.selected_choice_id
         )
         db.add(db_answer)
+        db.commit()
 
-        db_choice = db.query(Choice).filter(Choice.choice_id == answer_data.selected_choice_id).first()
+        # 선택한 답안이 정답인지 확인
+        db_choice = db.query(Choice).filter_by(choice_id=answer_data.selected_choice_id).first()
         if db_choice and db_choice.is_correct:
             score += 1
 
+    # 최종 점수 저장
     db_attempt.score = score
     db.commit()
 
-    return db_attempt
+    # 최종적으로 사용자의 시도 데이터를 반환
+    return Attempt(
+        attempt_id=db_attempt.attempt_id,
+        exam_id=db_attempt.exam_id,
+        user_id=db_attempt.user_id,
+        score=db_attempt.score,
+        attempt_date=db_attempt.attempt_date
+    )
+
 
 # 텍스트를 문제별로 나누기 위해 패턴을 사용하여 분리
 # 텍스트를 문제별로 나누는 함수

@@ -54,11 +54,10 @@ class AnswerCreate(BaseModel):
 
 class AttemptCreate(BaseModel):
     exam_id: int
-    user_id: int
     answers: List[AnswerCreate]
 
 class Attempt(BaseModel):
-    id: int
+    attempt_id: int
     exam_id: int
     user_id: int
     score: int
