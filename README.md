@@ -2,13 +2,13 @@
 1. Download Docker Desktop Application
 2. put the necessary files and directories in place
 3. command "docker-compose up --build"
-5. command "docker-compose run web alembic revision --autogenerate"
-6. command "docker-compose run web alembic upgrade head"
-7. Go to "http://localhost:8000/docs"
+4. command "docker-compose run web alembic revision --autogenerate"
+5. command "docker-compose run web alembic upgrade head"
+6. Go to "http://localhost:8000/docs"
 - signup
 - find post /exam methods and login with your username and password
 - execute that api
-8. If you want to show Web Application, go to "http://localhost:3000"
+7. If you want to show Web Application, go to "http://localhost:3000"
 
 ### Directory Structure
 
