@@ -6,9 +6,12 @@
 5. command "docker-compose run web alembic upgrade head"
 6. Go to "http://localhost:8000/docs"
 - signup
+  <br>
   <img width="300" alt="스크린샷 2024-09-20 17 45 52" src="https://github.com/user-attachments/assets/c7a05e0b-8699-4a57-a7c8-973c97c53b94">
 - find post /exam methods and login with your username and password
+  <br>
   <img width="300" alt="스크린샷 2024-09-20 17 48 44" src="https://github.com/user-attachments/assets/dc0b6c24-4d50-41c5-9842-6d2a00baaf4b">
+  <br>
   <img width="400" alt="스크린샷 2024-09-20 17 48 53" src="https://github.com/user-attachments/assets/c09947db-d5e1-415d-97f8-4effbb05f941">
 - execute that api
 7. If you want to show Web Application, go to "http://localhost:3000"
