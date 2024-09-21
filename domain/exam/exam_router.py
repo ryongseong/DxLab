@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
 from domain.exam.exam_schema import Exam as ExamSchema
-from domain.exam.exam_crud import Ollama, create_exam, get_exam, get_exam_with_questions_and_choices, submit_attempt
+from domain.exam.exam_crud import create_exam, get_exam, get_exam_with_questions_and_choices, submit_attempt
 from domain.exam.exam_schema import ChoiceCreate, ExamCreate, AttemptCreate, Attempt, TestQuestion, TestQuestionCreate
 from domain.user import user_schema
 from domain.user.user_router import get_current_user
