@@ -6,7 +6,6 @@ __pycache__/
 # C extensions
 *.so
 
-migrations/
 data/
 
 # Distribution / packaging
@@ -32,7 +31,6 @@ MANIFEST
 .idea
 myapi.db
 *.pyc
-migrations/versions/*
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
