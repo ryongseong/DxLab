@@ -20,9 +20,3 @@ app.include_router(user_router.router)
 app.include_router(question_router.router)
 app.include_router(exam_router.router)
 app.include_router(gemini_router.router)
-
-@app.post('/')
-def root():
-    import requests
-    response = requests.get("http://host.docker.internal:8001/available-gpu")
-    return response.json()
