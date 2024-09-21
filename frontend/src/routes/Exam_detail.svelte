@@ -245,4 +245,9 @@
         display: flex;
         margin-bottom: 20px;
     }
+
+    input[type="radio"] {
+        width: 18px;
+        height: 18px;
+    }
 </style>
