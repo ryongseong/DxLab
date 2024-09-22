@@ -26,7 +26,7 @@
 4. Ollama pull llama3.1
 5. command "uvicorn model_server:app --host 0.0.0.0 --port 8001"
 
-### Directory Structure
+## Directory Structure
 
       DXLAB / Main Directory
       ├── data / Data Directory - Hidden
