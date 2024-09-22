@@ -1,4 +1,6 @@
-### Run Methods
+## Run Methods
+
+### Docker-Environment Methods
 1. Download Docker Desktop Application
 2. put the necessary files and directories in place
 3. command "docker-compose up --build"
@@ -16,6 +18,13 @@
   <img width="400" alt="스크린샷 2024-09-20 17 48 53" src="https://github.com/user-attachments/assets/c09947db-d5e1-415d-97f8-4effbb05f941">
 - execute that api
 7. If you want to show Web Application, go to "http://localhost:3000"
+
+### Local-Environment Methods
+1. Download Python v3.10
+2. install pip libraries
+3. Install Ollama
+4. Ollama pull llama3.1
+5. command "uvicorn model_server:app --host 0.0.0.0 --port 8001"
 
 ### Directory Structure
 
