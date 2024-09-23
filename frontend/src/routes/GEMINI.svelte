@@ -1,7 +1,6 @@
 <script>
-    import { questions } from "../lib/store";
     import { fetchMyQuestionsGemini, makeGeminiText, sendPromptGemini } from "../lib/auth";
-    import { gemini_response, is_loading, is_loading2 } from "../lib/store";
+    import { questions, gemini_response, is_loading, is_loading2 } from "../lib/store";
     import { onMount, onDestroy } from "svelte";
     import { link, push } from "svelte-spa-router";
     import fastapi from "../lib/api";
@@ -110,7 +109,7 @@
 
     async function handleSendPrompt() {
         if (prompt.trim() === '' || category.trim() === '') {
-            alert('제목과 카테고리를 모두 입력하세요.');
+            alert('프롬프트와 카테고리를 모두 입력하세요.');
             return;
         }
         try {
