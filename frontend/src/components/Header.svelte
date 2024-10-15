@@ -62,7 +62,7 @@
                 </li>
                 <div class="nav-item" style="color: white; margin-top:5px;">|</div>
                 <li class="nav-item">
-                    <a use:link href='/self' class="nav-link">자기소개서 작성</a>
+                    <a use:link href='/select' class="nav-link">자기소개서 작성</a>
                 </li>
             </ul>
             <ul class="navbar-nav ms-auto mb-2 mb-lg-0 ag">

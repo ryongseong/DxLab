@@ -2,10 +2,11 @@ from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./myapi.db"
+SQLALCHEMY_DATABASE_URL = "postgresql://dxlab:dxlab@db/dxlab"
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL
+    SQLALCHEMY_DATABASE_URL,
+    connect_args={"connect_timeout": 60}
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

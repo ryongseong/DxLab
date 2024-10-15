@@ -120,12 +120,12 @@ async def make_generation_text(question: str, keyword:list[str], thread_id: str)
     client = OpenAI(api_key=f"{OPENAI_API_KEY}")
     assistant_id = f"{ASSISTANT_ID_GENERATE}"
 
-    question = question+str(keyword)
+    question = question + str(keyword)
 
     message = client.beta.threads.messages.create(
         thread_id=thread_id,
         role="user",
-        content="키워드는 다음과 같아" + str(keyword) + question
+        content="키워드는 다음과 같아" + str(keyword) + question + "이 키워드를 강조하지 말고 키워드를 풀어써서 자기소개서를 다시 만들어줘"
     )
 
     run = client.beta.threads.runs.create(

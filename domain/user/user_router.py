@@ -15,7 +15,7 @@ from domain.user.user_crud import pwd_context
 
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 SECRET_KEY = str(os.environ.get("SECRET_KEY"))
-ALGORITHM="HS256"
+ALGORITHM=str(os.environ.get("ALGORITHM"))
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/user/login")
 
 router = APIRouter(
@@ -64,21 +64,23 @@ def login_for_access_token(
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.now() + timedelta(minutes=15)
     to_encode.update({"exp" : expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
     return encoded_jwt
 
 def get_current_user(
         token: str = Depends(oauth2_scheme),
         db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
@@ -86,8 +88,9 @@ def get_current_user(
             raise credentials_exception
     except JWTError:
         raise credentials_exception
+
     user = user_crud.get_user(db, username=username)
     if user is None:
         raise credentials_exception
-    return user
 
+    return user
